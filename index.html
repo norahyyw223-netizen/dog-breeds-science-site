@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>汪星图鉴 | 小狗种类科普网站</title>
+  <meta name="description" content="一个轻量、好懂的小狗品种科普网站，帮助你快速了解常见犬种特征与科学养护要点。" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="hero__badge">犬种科普站</div>
+    <h1>汪星图鉴</h1>
+    <p>认识不同小狗的性格、体型和照护需求，让“喜欢”变成“科学陪伴”。</p>
+    <a href="#breeds" class="hero__cta">开始探索</a>
+  </header>
+
+  <main>
+    <section class="info-strip" aria-label="犬类基础知识">
+      <article>
+        <h2>犬种并非“好坏”</h2>
+        <p>每个品种都有优点与挑战，关键在于是否与你的生活节奏匹配。</p>
+      </article>
+      <article>
+        <h2>训练越早越好</h2>
+        <p>幼犬期建立规则，会显著降低乱叫、扑人和分离焦虑的风险。</p>
+      </article>
+      <article>
+        <h2>运动需求差异大</h2>
+        <p>工作犬和伴侣犬日常活动量相差很大，选犬前先评估时间投入。</p>
+      </article>
+    </section>
+
+    <section class="control" id="breeds">
+      <h2>按体型筛选犬种</h2>
+      <div class="control__buttons" role="group" aria-label="体型筛选">
+        <button class="is-active" data-filter="all">全部</button>
+        <button data-filter="small">小型犬</button>
+        <button data-filter="medium">中型犬</button>
+        <button data-filter="large">大型犬</button>
+      </div>
+    </section>
+
+    <section class="cards" aria-label="犬种卡片">
+      <article class="card" data-size="small">
+        <div class="card__icon">🐕</div>
+        <h3>柯基犬</h3>
+        <p class="tag">小型犬 · 活泼</p>
+        <p>腿短但精力旺盛，喜欢互动游戏。注意控制体重，减少脊椎负担。</p>
+      </article>
+      <article class="card" data-size="small">
+        <div class="card__icon">🐩</div>
+        <h3>贵宾犬</h3>
+        <p class="tag">小型犬 · 聪明</p>
+        <p>学习能力强、掉毛少，适合重视训练和护理的家庭。</p>
+      </article>
+      <article class="card" data-size="medium">
+        <div class="card__icon">🐶</div>
+        <h3>柴犬</h3>
+        <p class="tag">中型犬 · 独立</p>
+        <p>警觉性高，个性较自主。社会化训练不足时可能表现固执。</p>
+      </article>
+      <article class="card" data-size="medium">
+        <div class="card__icon">🦮</div>
+        <h3>边境牧羊犬</h3>
+        <p class="tag">中型犬 · 工作型</p>
+        <p>智商高、执行力强，需要大量脑力和体能消耗，不适合长期“宅家”。</p>
+      </article>
+      <article class="card" data-size="large">
+        <div class="card__icon">🐕‍🦺</div>
+        <h3>金毛寻回犬</h3>
+        <p class="tag">大型犬 · 亲人</p>
+        <p>情绪稳定，常见于陪伴犬。生长期需注意关节发育和科学补钙。</p>
+      </article>
+      <article class="card" data-size="large">
+        <div class="card__icon">🦴</div>
+        <h3>拉布拉多</h3>
+        <p class="tag">大型犬 · 友善</p>
+        <p>服从性强，适合作为导盲犬。食欲旺，需严格控制零食摄入。</p>
+      </article>
+    </section>
+
+    <section class="care">
+      <h2>科学养护 4 条原则</h2>
+      <ol>
+        <li>疫苗、驱虫、体检按时间表执行，不要“感觉健康就跳过”。</li>
+        <li>选择正规犬粮并查看配料表，避免高盐高油的人类食物。</li>
+        <li>每天固定陪伴与互动，减少行为问题和情绪压力。</li>
+        <li>出现持续呕吐、腹泻、精神萎靡时，优先咨询兽医。</li>
+      </ol>
+    </section>
+  </main>
+
+  <footer>
+    <p>汪星图鉴 · 让养犬更科学 · 2026</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
