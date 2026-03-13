@@ -15,7 +15,10 @@
     <div class="hero__badge">犬种科普站</div>
     <h1>汪星图鉴</h1>
     <p>认识不同小狗的性格、体型和照护需求，让“喜欢”变成“科学陪伴”。</p>
-    <a href="#breeds" class="hero__cta">开始探索</a>
+    <div class="hero__actions">
+      <a href="#breeds" class="hero__cta">开始探索</a>
+      <button class="hero__feedback-btn" data-open-feedback type="button">提交建议</button>
+    </div>
   </header>
 
   <main>
@@ -98,6 +101,30 @@
     <p>汪星图鉴 · 让养犬更科学 · 2026</p>
   </footer>
 
+  <button class="feedback-fab" data-open-feedback type="button" aria-label="提交建议">提交建议</button>
+
+  <dialog id="feedbackDialog" class="feedback-dialog">
+    <form id="feedbackForm" class="feedback-form" method="dialog">
+      <div class="feedback-form__head">
+        <h2>建议采集</h2>
+        <button type="button" class="feedback-close" id="closeFeedback" aria-label="关闭">×</button>
+      </div>
+      <label for="nickname">昵称（选填）</label>
+      <input id="nickname" name="nickname" type="text" maxlength="40" placeholder="例如：爱狗路人甲" />
+
+      <label for="contact">联系方式（选填）</label>
+      <input id="contact" name="contact" type="text" maxlength="80" placeholder="邮箱 / 微信 / 手机号" />
+
+      <label for="suggestion">建议内容</label>
+      <textarea id="suggestion" name="suggestion" rows="5" maxlength="800" required placeholder="请写下你希望补充的犬种、功能或改进点"></textarea>
+
+      <p id="formStatus" class="form-status" aria-live="polite"></p>
+
+      <button type="submit" class="submit-btn">提交建议</button>
+    </form>
+  </dialog>
+
+  <script src="api-config.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

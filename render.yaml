@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: dog-breeds-api
+    env: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: DB_PATH
+        value: /var/data/suggestions.db
+    disk:
+      name: data
+      mountPath: /var/data
+      sizeGB: 1

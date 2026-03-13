@@ -1,0 +1,6 @@
+node_modules/
+data/*.db
+.npm-cache/
+server.log
+start-site.command
+stop-site.command
