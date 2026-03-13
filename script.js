@@ -464,7 +464,8 @@ if (feedbackForm) {
     const payload = {
       nickname: String(formData.get("nickname") || "").trim(),
       contact: String(formData.get("contact") || "").trim(),
-      suggestion: String(formData.get("suggestion") || "").trim()
+      suggestion: String(formData.get("suggestion") || "").trim(),
+      sourcePath: `${window.location.pathname}${window.location.search}`
     };
 
     if (!payload.suggestion) {

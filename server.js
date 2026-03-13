@@ -10,7 +10,10 @@ const dbDir = path.dirname(dbPath);
 const FIELD_LIMITS = {
   nickname: 40,
   contact: 80,
-  suggestion: 800
+  suggestion: 800,
+  sourcePath: 200,
+  userAgent: 300,
+  clientIp: 80
 };
 
 fs.mkdirSync(dbDir, { recursive: true });
@@ -32,7 +35,23 @@ db.serialize(() => {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS suggestion_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      suggestion_id INTEGER NOT NULL,
+      source_path TEXT,
+      user_agent TEXT,
+      client_ip TEXT,
+      payload_json TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (suggestion_id) REFERENCES suggestions(id)
+    )
+  `);
+
   db.run("CREATE INDEX IF NOT EXISTS idx_suggestions_created_at ON suggestions(created_at)");
+  db.run("CREATE INDEX IF NOT EXISTS idx_suggestion_events_suggestion_id ON suggestion_events(suggestion_id)");
+  db.run("CREATE INDEX IF NOT EXISTS idx_suggestion_events_created_at ON suggestion_events(created_at)");
 });
 
 app.use(express.json());
@@ -65,22 +84,51 @@ app.post("/api/suggestions", (req, res) => {
   const nicknameRaw = typeof req.body.nickname === "string" ? req.body.nickname.trim() : "";
   const contactRaw = typeof req.body.contact === "string" ? req.body.contact.trim() : "";
   const suggestionRaw = typeof req.body.suggestion === "string" ? req.body.suggestion.trim() : "";
+  const sourcePathRaw = typeof req.body.sourcePath === "string" ? req.body.sourcePath.trim() : "";
+
+  const userAgentRaw = typeof req.headers["user-agent"] === "string" ? req.headers["user-agent"].trim() : "";
+  const forwardedFor = typeof req.headers["x-forwarded-for"] === "string" ? req.headers["x-forwarded-for"] : "";
+  const clientIpRaw = (forwardedFor.split(",")[0] || req.socket.remoteAddress || "").trim();
+
   const nickname = nicknameRaw.slice(0, FIELD_LIMITS.nickname);
   const contact = contactRaw.slice(0, FIELD_LIMITS.contact);
   const suggestion = suggestionRaw.slice(0, FIELD_LIMITS.suggestion);
+  const sourcePath = sourcePathRaw.slice(0, FIELD_LIMITS.sourcePath);
+  const userAgent = userAgentRaw.slice(0, FIELD_LIMITS.userAgent);
+  const clientIp = clientIpRaw.slice(0, FIELD_LIMITS.clientIp);
 
   if (!suggestion) {
     return res.status(400).json({ message: "suggestion is required" });
   }
 
-  const sql = "INSERT INTO suggestions (nickname, contact, suggestion) VALUES (?, ?, ?)";
-  db.run(sql, [nickname, contact, suggestion], function onInsert(error) {
+  const insertSuggestionSql = "INSERT INTO suggestions (nickname, contact, suggestion) VALUES (?, ?, ?)";
+
+  db.run(insertSuggestionSql, [nickname, contact, suggestion], function onInsert(error) {
     if (error) {
       console.error("Insert failed:", error.message);
       return res.status(500).json({ message: "insert failed" });
     }
 
-    return res.status(201).json({ id: this.lastID });
+    const suggestionId = this.lastID;
+    const payloadJson = JSON.stringify({
+      nickname,
+      contact,
+      suggestion,
+      sourcePath
+    });
+
+    const insertEventSql = `
+      INSERT INTO suggestion_events (suggestion_id, source_path, user_agent, client_ip, payload_json)
+      VALUES (?, ?, ?, ?, ?)
+    `;
+
+    db.run(insertEventSql, [suggestionId, sourcePath, userAgent, clientIp, payloadJson], (eventError) => {
+      if (eventError) {
+        console.error("Insert suggestion event failed:", eventError.message);
+      }
+
+      return res.status(201).json({ id: suggestionId });
+    });
   });
 });
 
