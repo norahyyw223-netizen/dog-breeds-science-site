@@ -286,7 +286,7 @@ function runWikiQueue() {
     getWikiSummary(task.breed)
       .then((text) => {
         if (task.node && task.node.isConnected) {
-          task.node.textContent = `维基百科：${text}`;
+          task.node.textContent = `特征：${text}`;
         }
       })
       .finally(() => {
@@ -299,7 +299,6 @@ function runWikiQueue() {
 
 function cardHtml(breed) {
   const alias = breed.alias ? `（别名：${escapeHtml(breed.alias)}）` : "";
-  const intro = groupIntroShort(breed.groupNo);
   return `
     <article class="card" data-type-no="${escapeHtml(breed.typeNo)}">
       <div class="card__icon">${iconByGroup(breed.groupNo)}</div>
@@ -308,9 +307,8 @@ function cardHtml(breed) {
       <p>${escapeHtml(breed.englishName)}${alias}</p>
       <p>段别：${escapeHtml(breed.sectionNameCn)}</p>
       <div class="breed-features">
-        <p class="feature-item">组别特征：${escapeHtml(intro)}</p>
         <p class="feature-item">功能定位：${escapeHtml(breed.groupNameCn)} · ${escapeHtml(breed.sectionNameCn)}</p>
-        <p class="feature-item wiki-snippet" data-type-no="${escapeHtml(breed.typeNo)}">维基百科：加载中...</p>
+        <p class="feature-item wiki-snippet" data-type-no="${escapeHtml(breed.typeNo)}">特征：加载中...</p>
       </div>
     </article>
   `;
@@ -359,7 +357,12 @@ function renderBreedCards(filter = "all") {
       if (!sizeMeta[size]) {
         return;
       }
-      window.location.href = `breeds.html?size=${encodeURIComponent(size)}`;
+      const pageMap = {
+        small: "breeds-small.html",
+        medium: "breeds-medium.html",
+        large: "breeds-large.html"
+      };
+      window.location.href = pageMap[size];
     });
   });
 
@@ -372,7 +375,7 @@ function renderBreedCards(filter = "all") {
 
     const cached = wikiCache.get(breed.typeNo);
     if (cached) {
-      node.textContent = `维基百科：${cached}`;
+      node.textContent = `特征：${cached}`;
       return;
     }
 

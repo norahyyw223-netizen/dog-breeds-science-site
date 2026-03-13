@@ -380,6 +380,27 @@ main {
   color: var(--text-soft);
 }
 
+.subpage-switch {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.subpage-switch a {
+  text-decoration: none;
+  color: #6f8593;
+  border: 1px solid #cfdee8;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.subpage-switch a.is-active {
+  color: #fff;
+  border-color: transparent;
+  background: linear-gradient(110deg, var(--accent), #248675);
+}
+
 .care {
   margin: 2.4rem 0 2.8rem;
   background: #fff;

@@ -1,9 +1,10 @@
+const pageRoot = document.querySelector("[data-size-page]");
+const currentSize = pageRoot?.dataset.size;
+
 const subpageTitle = document.querySelector("#subpageTitle");
 const subpageDesc = document.querySelector("#subpageDesc");
 const subpageCards = document.querySelector("#subpageCards");
-const subpageFilters = document.querySelector("#subpageFilters");
 
-const ckuGroups = Array.isArray(window.CKU_GROUPS) ? window.CKU_GROUPS : [];
 const ckuBreeds = Array.isArray(window.CKU_BREEDS) ? window.CKU_BREEDS : [];
 
 const wikiCacheKey = "wiki_summary_cache_v1";
@@ -88,16 +89,6 @@ function iconByGroup(groupNo) {
   return icons[groupNo] || "🐾";
 }
 
-function groupIntroShort(groupNo) {
-  const group = ckuGroups.find((g) => String(g.group_no) === String(groupNo));
-  if (!group || !group.introduction) {
-    return "该组强调稳定训练与科学社交。";
-  }
-  const text = String(group.introduction).replace(/\s+/g, " ").trim();
-  const first = text.split(/[。.!?]/)[0];
-  return first ? `${first}。` : text;
-}
-
 function classifySize(breed) {
   const text = `${breed.chineseName || ""} ${breed.englishName || ""} ${breed.alias || ""}`.toLowerCase();
 
@@ -176,7 +167,7 @@ async function getWikiSummary(breed) {
   if (!summary) {
     summary = await fetchWikiSummaryBySearch(breed.chineseName || breed.englishName || "");
   }
-  if (!summary) summary = "维基百科暂无可用摘要。";
+  if (!summary) summary = "暂无可用摘要。";
 
   const clipped = summary.length > 110 ? `${summary.slice(0, 110)}...` : summary;
   wikiCache.set(breed.typeNo, clipped);
@@ -198,7 +189,7 @@ function runWikiQueue() {
     getWikiSummary(task.breed)
       .then((text) => {
         if (task.node && task.node.isConnected) {
-          task.node.textContent = `维基百科：${text}`;
+          task.node.textContent = `特征：${text}`;
         }
       })
       .finally(() => {
@@ -210,19 +201,23 @@ function runWikiQueue() {
 }
 
 function render(size) {
+  if (!sizeMeta[size]) {
+    return;
+  }
+
   const list = ckuBreeds.filter((b) => classifySize(b) === size).sort(breedSort);
 
   subpageTitle.textContent = `${sizeMeta[size].label}全量列表`;
   subpageDesc.textContent = `共 ${list.length} 种（CKU标准）`;
 
-  subpageFilters.querySelectorAll("button").forEach((btn) => {
-    btn.classList.toggle("is-active", btn.dataset.size === size);
+  document.querySelectorAll("[data-link-size]").forEach((el) => {
+    const active = el.getAttribute("data-link-size") === size;
+    el.classList.toggle("is-active", active);
   });
 
   subpageCards.innerHTML = list
     .map((breed) => {
       const alias = breed.alias ? `（别名：${escapeHtml(breed.alias)}）` : "";
-      const intro = groupIntroShort(breed.groupNo);
       return `
       <article class="card" data-type-no="${escapeHtml(breed.typeNo)}">
         <div class="card__icon">${iconByGroup(breed.groupNo)}</div>
@@ -231,9 +226,8 @@ function render(size) {
         <p>${escapeHtml(breed.englishName)}${alias}</p>
         <p>段别：${escapeHtml(breed.sectionNameCn)}</p>
         <div class="breed-features">
-          <p class="feature-item">组别特征：${escapeHtml(intro)}</p>
           <p class="feature-item">功能定位：${escapeHtml(breed.groupNameCn)} · ${escapeHtml(breed.sectionNameCn)}</p>
-          <p class="feature-item wiki-snippet" data-type-no="${escapeHtml(breed.typeNo)}">维基百科：加载中...</p>
+          <p class="feature-item wiki-snippet" data-type-no="${escapeHtml(breed.typeNo)}">特征：加载中...</p>
         </div>
       </article>
       `;
@@ -246,28 +240,11 @@ function render(size) {
     if (!breed) return;
     const cached = wikiCache.get(breed.typeNo);
     if (cached) {
-      node.textContent = `维基百科：${cached}`;
+      node.textContent = `特征：${cached}`;
       return;
     }
     enqueueWikiTask(breed, node);
   });
 }
 
-function getInitialSize() {
-  const params = new URLSearchParams(window.location.search);
-  const size = params.get("size");
-  return sizeMeta[size] ? size : "small";
-}
-
-let currentSize = getInitialSize();
-render(currentSize);
-
-subpageFilters.addEventListener("click", (event) => {
-  const target = event.target;
-  if (!(target instanceof HTMLButtonElement)) return;
-  const size = target.dataset.size;
-  if (!sizeMeta[size]) return;
-  currentSize = size;
-  history.replaceState({}, "", `?size=${encodeURIComponent(size)}`);
-  render(size);
-});
+render(currentSize || "small");
