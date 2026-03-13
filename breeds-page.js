@@ -1,5 +1,5 @@
 const pageRoot = document.querySelector("[data-size-page]");
-const currentSize = pageRoot?.dataset.size;
+const currentSize = pageRoot?.dataset.sizePage;
 
 const subpageTitle = document.querySelector("#subpageTitle");
 const subpageDesc = document.querySelector("#subpageDesc");
@@ -207,8 +207,8 @@ function render(size) {
 
   const list = ckuBreeds.filter((b) => classifySize(b) === size).sort(breedSort);
 
-  subpageTitle.textContent = `${sizeMeta[size].label}全量列表`;
-  subpageDesc.textContent = `共 ${list.length} 种（CKU标准）`;
+  subpageTitle.textContent = `${sizeMeta[size].label}详情`;
+  subpageDesc.textContent = `本页包含全部${sizeMeta[size].label}，共 ${list.length} 种（CKU标准）`;
 
   document.querySelectorAll("[data-link-size]").forEach((el) => {
     const active = el.getAttribute("data-link-size") === size;
@@ -226,7 +226,6 @@ function render(size) {
         <p>${escapeHtml(breed.englishName)}${alias}</p>
         <p>段别：${escapeHtml(breed.sectionNameCn)}</p>
         <div class="breed-features">
-          <p class="feature-item">功能定位：${escapeHtml(breed.groupNameCn)} · ${escapeHtml(breed.sectionNameCn)}</p>
           <p class="feature-item wiki-snippet" data-type-no="${escapeHtml(breed.typeNo)}">特征：加载中...</p>
         </div>
       </article>
