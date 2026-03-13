@@ -49,19 +49,9 @@
     </section>
 
     <section class="control" id="breeds">
-      <h2>FCI 犬种清单（当前展示 <span id="breedCount">0</span> 种）</h2>
-      <div class="control__buttons" role="group" aria-label="FCI组别筛选">
+      <h2>CKU 标准犬种清单（当前展示 <span id="breedCount">0</span> 种）</h2>
+      <div class="control__buttons" id="groupFilters" role="group" aria-label="CKU组别筛选">
         <button class="is-active" data-filter="all">全部组别</button>
-        <button data-filter="1">第1组</button>
-        <button data-filter="2">第2组</button>
-        <button data-filter="3">第3组</button>
-        <button data-filter="4">第4组</button>
-        <button data-filter="5">第5组</button>
-        <button data-filter="6">第6组</button>
-        <button data-filter="7">第7组</button>
-        <button data-filter="8">第8组</button>
-        <button data-filter="9">第9组</button>
-        <button data-filter="10">第10组</button>
       </div>
     </section>
 
@@ -106,7 +96,8 @@
   </dialog>
 
   <script src="api-config.js"></script>
-  <script src="fci-breeds.js"></script>
+  <script src="cku-groups.js"></script>
+  <script src="cku-breeds.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
