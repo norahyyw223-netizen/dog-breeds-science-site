@@ -49,17 +49,20 @@
     </section>
 
     <section class="control" id="breeds">
-      <h2>CKU 标准犬种清单（当前展示 <span id="breedCount">0</span> 种）</h2>
-      <div class="control__buttons" id="groupFilters" role="group" aria-label="CKU组别筛选">
-        <button class="is-active" data-filter="all">全部组别</button>
+      <h2>CKU 标准犬种清单（按体型分类，当前展示 <span id="breedCount">0</span> 种）</h2>
+      <div class="control__buttons" id="sizeFilters" role="group" aria-label="体型筛选">
+        <button class="is-active" data-filter="all">全部体型</button>
+        <button data-filter="small">小型犬</button>
+        <button data-filter="medium">中型犬</button>
+        <button data-filter="large">大型犬</button>
       </div>
     </section>
 
     <section class="cards" aria-label="犬种卡片"></section>
 
-    <section class="group-feature" aria-label="分组特点">
-      <h2 id="groupFeatureTitle">组别特点</h2>
-      <p id="groupFeatureText">请选择一个 CKU 分组查看该组犬种特点。</p>
+    <section class="group-feature" aria-label="体型特点">
+      <h2 id="groupFeatureTitle">体型特点</h2>
+      <p id="groupFeatureText">请选择小/中/大型查看对应犬种特征与饲养建议。</p>
     </section>
 
     <section class="care">

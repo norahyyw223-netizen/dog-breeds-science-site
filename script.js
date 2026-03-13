@@ -1,4 +1,4 @@
-const groupFilters = document.querySelector("#groupFilters");
+const sizeFilters = document.querySelector("#sizeFilters");
 const cardsContainer = document.querySelector(".cards");
 const breedCount = document.querySelector("#breedCount");
 
@@ -10,24 +10,9 @@ const formStatus = document.querySelector("#formStatus");
 const submitButton = feedbackForm?.querySelector("button[type='submit']");
 const apiBaseUrl = (window.APP_CONFIG?.API_BASE_URL || "").replace(/\/+$/, "");
 
-const ckuGroups = Array.isArray(window.CKU_GROUPS) ? window.CKU_GROUPS : [];
 const ckuBreeds = Array.isArray(window.CKU_BREEDS) ? window.CKU_BREEDS : [];
 const groupFeatureTitle = document.querySelector("#groupFeatureTitle");
 const groupFeatureText = document.querySelector("#groupFeatureText");
-
-const groupShortNameMap = {
-  "01": "牧羊犬",
-  "02": "宾莎/雪纳瑞/獒犬",
-  "03": "梗犬",
-  "04": "腊肠犬",
-  "05": "尖嘴犬和原始犬种",
-  "06": "嗅觉猎犬",
-  "07": "指示猎犬",
-  "08": "寻猎/搜寻/水猎犬",
-  "09": "伴侣犬和玩具犬",
-  "10": "灵缇犬",
-  "11": "非FCI犬种"
-};
 
 function escapeHtml(value) {
   return String(value || "")
@@ -55,44 +40,67 @@ function iconByGroup(groupNo) {
   return icons[groupNo] || "🐾";
 }
 
-function buildGroupFilters() {
-  if (!groupFilters) {
-    return;
+function classifySize(breed) {
+  const text = `${breed.chineseName || ""} ${breed.englishName || ""} ${breed.alias || ""}`;
+
+  const smallKeywords = [
+    "玩具", "迷你", "吉娃娃", "马尔济", "约克夏", "博美", "蝴蝶", "比熊", "西施", "巴哥", "北京犬", "狆", "toy", "miniature"
+  ];
+  const largeKeywords = [
+    "大丹", "圣伯纳", "纽芬兰", "獒", "伯恩山", "阿拉斯加", "高加索", "中亚", "德国牧羊", "金毛", "拉布拉多", "杜宾", "罗威纳", "猎狼", "mastiff", "great dane", "newfoundland", "saint"
+  ];
+
+  if (smallKeywords.some((k) => text.toLowerCase().includes(k.toLowerCase()))) {
+    return "small";
+  }
+  if (largeKeywords.some((k) => text.toLowerCase().includes(k.toLowerCase()))) {
+    return "large";
   }
 
-  const buttons = ckuGroups
-    .map((group) => {
-      const groupNo = String(group.group_no || "");
-      const shortName = groupShortNameMap[groupNo] || group.chinese_group_name || `第${groupNo}组`;
-      return `<button data-filter="${escapeHtml(groupNo)}">${escapeHtml(shortName)}</button>`;
-    })
-    .join("");
+  const groupDefaults = {
+    "01": "medium",
+    "02": "large",
+    "03": "small",
+    "04": "small",
+    "05": "medium",
+    "06": "medium",
+    "07": "medium",
+    "08": "medium",
+    "09": "small",
+    "10": "large",
+    "11": "medium"
+  };
 
-  groupFilters.innerHTML = `<button class="is-active" data-filter="all">全部组别</button>${buttons}`;
+  return groupDefaults[String(breed.groupNo)] || "medium";
 }
 
-function renderGroupFeature(filter = "all") {
+function renderSizeFeature(filter = "all") {
   if (!groupFeatureTitle || !groupFeatureText) {
     return;
   }
 
-  if (filter === "all") {
-    groupFeatureTitle.textContent = "CKU 分组特点";
-    groupFeatureText.textContent =
-      "CKU 将犬种按用途、体型、历史功能等标准分为 11 组。选择上方分组后可查看该组犬种的主要行为与功能特征。";
-    return;
-  }
+  const featureMap = {
+    all: {
+      title: "体型特点",
+      text: "小型犬通常更适合紧凑居住空间；中型犬在体能与陪伴间更平衡；大型犬通常运动、空间和训练投入更高。"
+    },
+    small: {
+      title: "小型犬特点",
+      text: "体型小、空间占用少，适合公寓；通常更需要稳定社交与情绪管理，避免过度敏感和吠叫。"
+    },
+    medium: {
+      title: "中型犬特点",
+      text: "体能和陪伴属性较均衡，适配面广；建议保持规律运动与基础服从训练，减少行为问题。"
+    },
+    large: {
+      title: "大型犬特点",
+      text: "力量和活动需求更高，对空间、牵引管理和关节健康要求更严格，需长期稳定训练。"
+    }
+  };
 
-  const group = ckuGroups.find((item) => String(item.group_no) === filter);
-  if (!group) {
-    groupFeatureTitle.textContent = "组别特点";
-    groupFeatureText.textContent = "未找到该分组说明。";
-    return;
-  }
-
-  const shortName = groupShortNameMap[String(group.group_no)] || group.chinese_group_name;
-  groupFeatureTitle.textContent = `${shortName}（第${Number(group.group_no)}组）`;
-  groupFeatureText.textContent = group.introduction || "该分组暂无详细说明。";
+  const data = featureMap[filter] || featureMap.all;
+  groupFeatureTitle.textContent = data.title;
+  groupFeatureText.textContent = data.text;
 }
 
 function renderBreedCards(filter = "all") {
@@ -100,7 +108,10 @@ function renderBreedCards(filter = "all") {
     return;
   }
 
-  const visible = ckuBreeds.filter((breed) => filter === "all" || String(breed.groupNo) === filter);
+  const visible = ckuBreeds.filter((breed) => {
+    const size = classifySize(breed);
+    return filter === "all" || size === filter;
+  });
 
   cardsContainer.innerHTML = visible
     .map((breed) => {
@@ -122,22 +133,22 @@ function renderBreedCards(filter = "all") {
   }
 }
 
-buildGroupFilters();
 renderBreedCards("all");
-renderGroupFeature("all");
+renderSizeFeature("all");
 
-if (groupFilters) {
-  groupFilters.addEventListener("click", (event) => {
+if (sizeFilters) {
+  sizeFilters.addEventListener("click", (event) => {
     const target = event.target;
     if (!(target instanceof HTMLButtonElement)) {
       return;
     }
 
     const filter = target.dataset.filter || "all";
-    groupFilters.querySelectorAll("button").forEach((btn) => btn.classList.remove("is-active"));
+    sizeFilters.querySelectorAll("button").forEach((btn) => btn.classList.remove("is-active"));
     target.classList.add("is-active");
+
     renderBreedCards(filter);
-    renderGroupFeature(filter);
+    renderSizeFeature(filter);
   });
 }
 
