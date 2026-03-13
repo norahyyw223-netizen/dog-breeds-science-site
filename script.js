@@ -23,6 +23,44 @@ const wikiQueue = [];
 let wikiActiveCount = 0;
 const maxWikiConcurrency = 3;
 
+const sizeMeta = {
+  small: { label: "小型犬" },
+  medium: { label: "中型犬" },
+  large: { label: "大型犬" }
+};
+
+const commonBreedRank = {
+  柯基犬: 1,
+  贵宾犬: 2,
+  博美犬: 3,
+  吉娃娃犬: 4,
+  比熊犬: 5,
+  柴犬: 6,
+  边境牧羊犬: 7,
+  西伯利亚哈士奇: 8,
+  比格犬: 9,
+  金毛寻回犬: 10,
+  拉布拉多寻回犬: 11,
+  拉布拉多: 11,
+  德国牧羊犬: 12,
+  阿拉斯加雪橇犬: 13,
+  罗威纳犬: 14,
+  杜宾犬: 15,
+  大丹犬: 16,
+  伯恩山犬: 17,
+  圣伯纳犬: 18,
+  法国斗牛犬: 19,
+  巴哥犬: 20
+};
+
+const expandedBySize = {
+  small: false,
+  medium: false,
+  large: false
+};
+
+let currentFilter = "all";
+
 try {
   const cached = JSON.parse(localStorage.getItem(wikiCacheKey) || "{}");
   Object.entries(cached).forEach(([k, v]) => wikiCache.set(k, v));
@@ -112,6 +150,21 @@ function classifySize(breed) {
   return groupDefaults[String(breed.groupNo)] || "medium";
 }
 
+function breedSort(a, b) {
+  const ra = commonBreedRank[a.chineseName] || 9999;
+  const rb = commonBreedRank[b.chineseName] || 9999;
+  if (ra !== rb) {
+    return ra - rb;
+  }
+  return Number(a.typeNo) - Number(b.typeNo);
+}
+
+function getBreedsBySize(size) {
+  return ckuBreeds
+    .filter((breed) => classifySize(breed) === size)
+    .sort(breedSort);
+}
+
 function renderSizeFeature(filter = "all") {
   if (!groupFeatureTitle || !groupFeatureText) {
     return;
@@ -120,7 +173,7 @@ function renderSizeFeature(filter = "all") {
   const featureMap = {
     all: {
       title: "体型特点",
-      text: "小型犬通常更适合紧凑居住空间；中型犬在体能与陪伴间更平衡；大型犬通常运动、空间和训练投入更高。"
+      text: "每个体型默认展示5个常见犬种，点击“更多”可展开全部。小型犬更适配紧凑空间；中型犬较均衡；大型犬对空间与训练投入要求更高。"
     },
     small: {
       title: "小型犬特点",
@@ -250,44 +303,78 @@ function runWikiQueue() {
   }
 }
 
+function cardHtml(breed) {
+  const alias = breed.alias ? `（别名：${escapeHtml(breed.alias)}）` : "";
+  const intro = groupIntroShort(breed.groupNo);
+  return `
+    <article class="card" data-type-no="${escapeHtml(breed.typeNo)}">
+      <div class="card__icon">${iconByGroup(breed.groupNo)}</div>
+      <h3>${escapeHtml(breed.chineseName)}</h3>
+      <p class="tag">CKU编号 ${escapeHtml(breed.typeNo)} · 第${escapeHtml(Number(breed.groupNo))}组</p>
+      <p>${escapeHtml(breed.englishName)}${alias}</p>
+      <p>段别：${escapeHtml(breed.sectionNameCn)}</p>
+      <div class="breed-features">
+        <p class="feature-item">组别特征：${escapeHtml(intro)}</p>
+        <p class="feature-item">功能定位：${escapeHtml(breed.groupNameCn)} · ${escapeHtml(breed.sectionNameCn)}</p>
+        <p class="feature-item wiki-snippet" data-type-no="${escapeHtml(breed.typeNo)}">维基百科：加载中...</p>
+      </div>
+    </article>
+  `;
+}
+
 function renderBreedCards(filter = "all") {
   if (!cardsContainer) {
     return;
   }
 
-  const visible = ckuBreeds.filter((breed) => {
-    const size = classifySize(breed);
-    return filter === "all" || size === filter;
-  });
+  const sizesToRender = filter === "all" ? ["small", "medium", "large"] : [filter];
+  let shownCount = 0;
 
-  cardsContainer.innerHTML = visible
-    .map((breed) => {
-      const alias = breed.alias ? `（别名：${escapeHtml(breed.alias)}）` : "";
-      const intro = groupIntroShort(breed.groupNo);
+  cardsContainer.innerHTML = sizesToRender
+    .map((size) => {
+      const fullList = getBreedsBySize(size);
+      const expanded = expandedBySize[size];
+      const list = expanded ? fullList : fullList.slice(0, 5);
+      shownCount += list.length;
+
+      const leftCount = Math.max(fullList.length - list.length, 0);
+      const moreButton =
+        fullList.length > 5
+          ? `<button class="more-btn" data-size="${size}" type="button">${expanded ? "收起" : `更多（+${leftCount}）`}</button>`
+          : "";
+
       return `
-      <article class="card" data-type-no="${escapeHtml(breed.typeNo)}">
-        <div class="card__icon">${iconByGroup(breed.groupNo)}</div>
-        <h3>${escapeHtml(breed.chineseName)}</h3>
-        <p class="tag">CKU编号 ${escapeHtml(breed.typeNo)} · 第${escapeHtml(Number(breed.groupNo))}组</p>
-        <p>${escapeHtml(breed.englishName)}${alias}</p>
-        <p>段别：${escapeHtml(breed.sectionNameCn)}</p>
-        <div class="breed-features">
-          <p class="feature-item">组别特征：${escapeHtml(intro)}</p>
-          <p class="feature-item">功能定位：${escapeHtml(breed.groupNameCn)} · ${escapeHtml(breed.sectionNameCn)}</p>
-          <p class="feature-item wiki-snippet" data-type-no="${escapeHtml(breed.typeNo)}">维基百科：加载中...</p>
+      <section class="breed-section" data-size="${size}">
+        <div class="breed-section__head">
+          <h3>${sizeMeta[size].label}（共 ${fullList.length} 种）</h3>
+          ${moreButton}
         </div>
-      </article>
-    `;
+        <div class="cards-grid">
+          ${list.map(cardHtml).join("")}
+        </div>
+      </section>
+      `;
     })
     .join("");
 
   if (breedCount) {
-    breedCount.textContent = String(visible.length);
+    breedCount.textContent = String(shownCount);
   }
+
+  cardsContainer.querySelectorAll(".more-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const size = btn.getAttribute("data-size");
+      if (!size || !expandedBySize.hasOwnProperty(size)) {
+        return;
+      }
+      expandedBySize[size] = !expandedBySize[size];
+      renderBreedCards(currentFilter);
+    });
+  });
 
   cardsContainer.querySelectorAll(".wiki-snippet").forEach((node) => {
     const typeNo = node.getAttribute("data-type-no");
-    const breed = visible.find((item) => String(item.typeNo) === String(typeNo));
+    const breed = ckuBreeds.find((item) => String(item.typeNo) === String(typeNo));
     if (!breed) {
       return;
     }
@@ -313,6 +400,7 @@ if (sizeFilters) {
     }
 
     const filter = target.dataset.filter || "all";
+    currentFilter = filter;
     sizeFilters.querySelectorAll("button").forEach((btn) => btn.classList.remove("is-active"));
     target.classList.add("is-active");
 
