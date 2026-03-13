@@ -7,6 +7,11 @@ const app = express();
 const port = process.env.PORT || 3000;
 const dbPath = process.env.DB_PATH || path.join(__dirname, "data", "suggestions.db");
 const dbDir = path.dirname(dbPath);
+const FIELD_LIMITS = {
+  nickname: 40,
+  contact: 80,
+  suggestion: 800
+};
 
 fs.mkdirSync(dbDir, { recursive: true });
 
@@ -27,6 +32,7 @@ db.serialize(() => {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+  db.run("CREATE INDEX IF NOT EXISTS idx_suggestions_created_at ON suggestions(created_at)");
 });
 
 app.use(express.json());
@@ -45,10 +51,23 @@ app.get("/api/health", (_req, res) => {
   return res.json({ ok: true });
 });
 
+app.get("/api/suggestions/stats", (_req, res) => {
+  db.get("SELECT COUNT(*) AS count FROM suggestions", [], (error, row) => {
+    if (error) {
+      console.error("Count query failed:", error.message);
+      return res.status(500).json({ message: "count query failed" });
+    }
+    return res.json({ count: row?.count || 0 });
+  });
+});
+
 app.post("/api/suggestions", (req, res) => {
-  const nickname = typeof req.body.nickname === "string" ? req.body.nickname.trim() : "";
-  const contact = typeof req.body.contact === "string" ? req.body.contact.trim() : "";
-  const suggestion = typeof req.body.suggestion === "string" ? req.body.suggestion.trim() : "";
+  const nicknameRaw = typeof req.body.nickname === "string" ? req.body.nickname.trim() : "";
+  const contactRaw = typeof req.body.contact === "string" ? req.body.contact.trim() : "";
+  const suggestionRaw = typeof req.body.suggestion === "string" ? req.body.suggestion.trim() : "";
+  const nickname = nicknameRaw.slice(0, FIELD_LIMITS.nickname);
+  const contact = contactRaw.slice(0, FIELD_LIMITS.contact);
+  const suggestion = suggestionRaw.slice(0, FIELD_LIMITS.suggestion);
 
   if (!suggestion) {
     return res.status(400).json({ message: "suggestion is required" });

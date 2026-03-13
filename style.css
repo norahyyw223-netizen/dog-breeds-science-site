@@ -151,8 +151,7 @@ footer {
   gap: 0.7rem;
 }
 
-.hero__cta,
-.hero__feedback-btn {
+.hero__cta {
   border-radius: var(--radius-md);
   padding: 0.68rem 1.2rem;
   font: inherit;
@@ -164,13 +163,6 @@ footer {
   color: #fff;
   background: linear-gradient(120deg, var(--primary), var(--primary-2));
   box-shadow: 0 10px 22px rgba(233, 101, 69, 0.34);
-}
-
-.hero__feedback-btn {
-  border: 1px solid #bed4e2;
-  color: #355467;
-  background: #fff;
-  cursor: pointer;
 }
 
 main {
