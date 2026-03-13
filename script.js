@@ -10,9 +10,37 @@ const formStatus = document.querySelector("#formStatus");
 const submitButton = feedbackForm?.querySelector("button[type='submit']");
 const apiBaseUrl = (window.APP_CONFIG?.API_BASE_URL || "").replace(/\/+$/, "");
 
+const ckuGroups = Array.isArray(window.CKU_GROUPS) ? window.CKU_GROUPS : [];
 const ckuBreeds = Array.isArray(window.CKU_BREEDS) ? window.CKU_BREEDS : [];
+
 const groupFeatureTitle = document.querySelector("#groupFeatureTitle");
 const groupFeatureText = document.querySelector("#groupFeatureText");
+
+const wikiCacheKey = "wiki_summary_cache_v1";
+const wikiCache = new Map();
+const wikiPending = new Set();
+const wikiQueue = [];
+let wikiActiveCount = 0;
+const maxWikiConcurrency = 3;
+
+try {
+  const cached = JSON.parse(localStorage.getItem(wikiCacheKey) || "{}");
+  Object.entries(cached).forEach(([k, v]) => wikiCache.set(k, v));
+} catch (_error) {
+  // ignore invalid cache
+}
+
+function persistWikiCache() {
+  const obj = {};
+  wikiCache.forEach((v, k) => {
+    obj[k] = v;
+  });
+  try {
+    localStorage.setItem(wikiCacheKey, JSON.stringify(obj));
+  } catch (_error) {
+    // ignore storage failure
+  }
+}
 
 function escapeHtml(value) {
   return String(value || "")
@@ -40,8 +68,18 @@ function iconByGroup(groupNo) {
   return icons[groupNo] || "🐾";
 }
 
+function groupIntroShort(groupNo) {
+  const group = ckuGroups.find((g) => String(g.group_no) === String(groupNo));
+  if (!group || !group.introduction) {
+    return "该组强调稳定训练与科学社交。";
+  }
+  const text = String(group.introduction).replace(/\s+/g, " ").trim();
+  const first = text.split(/[。.!?]/)[0];
+  return first ? `${first}。` : text;
+}
+
 function classifySize(breed) {
-  const text = `${breed.chineseName || ""} ${breed.englishName || ""} ${breed.alias || ""}`;
+  const text = `${breed.chineseName || ""} ${breed.englishName || ""} ${breed.alias || ""}`.toLowerCase();
 
   const smallKeywords = [
     "玩具", "迷你", "吉娃娃", "马尔济", "约克夏", "博美", "蝴蝶", "比熊", "西施", "巴哥", "北京犬", "狆", "toy", "miniature"
@@ -50,10 +88,10 @@ function classifySize(breed) {
     "大丹", "圣伯纳", "纽芬兰", "獒", "伯恩山", "阿拉斯加", "高加索", "中亚", "德国牧羊", "金毛", "拉布拉多", "杜宾", "罗威纳", "猎狼", "mastiff", "great dane", "newfoundland", "saint"
   ];
 
-  if (smallKeywords.some((k) => text.toLowerCase().includes(k.toLowerCase()))) {
+  if (smallKeywords.some((k) => text.includes(k.toLowerCase()))) {
     return "small";
   }
-  if (largeKeywords.some((k) => text.toLowerCase().includes(k.toLowerCase()))) {
+  if (largeKeywords.some((k) => text.includes(k.toLowerCase()))) {
     return "large";
   }
 
@@ -103,6 +141,115 @@ function renderSizeFeature(filter = "all") {
   groupFeatureText.textContent = data.text;
 }
 
+function normalizeWikiText(text) {
+  return String(text || "")
+    .replace(/\s+/g, " ")
+    .replace(/\[[^\]]*\]/g, "")
+    .trim();
+}
+
+async function fetchWikiSummaryByTitle(title) {
+  if (!title) {
+    return "";
+  }
+
+  const url = `https://zh.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
+  const res = await fetch(url);
+  if (!res.ok) {
+    return "";
+  }
+
+  const data = await res.json();
+  if (!data || !data.extract || data.type === "disambiguation") {
+    return "";
+  }
+
+  return normalizeWikiText(data.extract);
+}
+
+async function fetchWikiSummaryBySearch(query) {
+  if (!query) {
+    return "";
+  }
+
+  const searchUrl = `https://zh.wikipedia.org/w/api.php?action=query&format=json&list=search&srlimit=1&origin=*&srsearch=${encodeURIComponent(query)}`;
+  const res = await fetch(searchUrl);
+  if (!res.ok) {
+    return "";
+  }
+
+  const data = await res.json();
+  const title = data?.query?.search?.[0]?.title;
+  if (!title) {
+    return "";
+  }
+
+  return fetchWikiSummaryByTitle(title);
+}
+
+async function getWikiSummary(breed) {
+  const cacheValue = wikiCache.get(breed.typeNo);
+  if (cacheValue) {
+    return cacheValue;
+  }
+
+  const candidates = [
+    breed.chineseName,
+    String(breed.chineseName || "").replace(/犬$/u, ""),
+    breed.englishName
+  ];
+
+  let summary = "";
+  for (const title of candidates) {
+    summary = await fetchWikiSummaryByTitle(title);
+    if (summary) {
+      break;
+    }
+  }
+
+  if (!summary) {
+    summary = await fetchWikiSummaryBySearch(breed.chineseName || breed.englishName || "");
+  }
+
+  if (!summary) {
+    summary = "维基百科暂无可用摘要。";
+  }
+
+  const clipped = summary.length > 110 ? `${summary.slice(0, 110)}...` : summary;
+  wikiCache.set(breed.typeNo, clipped);
+  persistWikiCache();
+  return clipped;
+}
+
+function enqueueWikiTask(breed, node) {
+  if (!node || wikiPending.has(breed.typeNo)) {
+    return;
+  }
+
+  wikiPending.add(breed.typeNo);
+  wikiQueue.push({ breed, node });
+  runWikiQueue();
+}
+
+function runWikiQueue() {
+  while (wikiActiveCount < maxWikiConcurrency && wikiQueue.length > 0) {
+    const task = wikiQueue.shift();
+    wikiActiveCount += 1;
+
+    getWikiSummary(task.breed)
+      .then((text) => {
+        if (task.node && task.node.isConnected) {
+          task.node.textContent = `维基百科：${text}`;
+        }
+      })
+      .finally(() => {
+        wikiPending.delete(task.breed.typeNo);
+        wikiActiveCount -= 1;
+        runWikiQueue();
+      });
+  }
+}
+
 function renderBreedCards(filter = "all") {
   if (!cardsContainer) {
     return;
@@ -116,13 +263,19 @@ function renderBreedCards(filter = "all") {
   cardsContainer.innerHTML = visible
     .map((breed) => {
       const alias = breed.alias ? `（别名：${escapeHtml(breed.alias)}）` : "";
+      const intro = groupIntroShort(breed.groupNo);
       return `
-      <article class="card">
+      <article class="card" data-type-no="${escapeHtml(breed.typeNo)}">
         <div class="card__icon">${iconByGroup(breed.groupNo)}</div>
         <h3>${escapeHtml(breed.chineseName)}</h3>
         <p class="tag">CKU编号 ${escapeHtml(breed.typeNo)} · 第${escapeHtml(Number(breed.groupNo))}组</p>
         <p>${escapeHtml(breed.englishName)}${alias}</p>
         <p>段别：${escapeHtml(breed.sectionNameCn)}</p>
+        <div class="breed-features">
+          <p class="feature-item">组别特征：${escapeHtml(intro)}</p>
+          <p class="feature-item">功能定位：${escapeHtml(breed.groupNameCn)} · ${escapeHtml(breed.sectionNameCn)}</p>
+          <p class="feature-item wiki-snippet" data-type-no="${escapeHtml(breed.typeNo)}">维基百科：加载中...</p>
+        </div>
       </article>
     `;
     })
@@ -131,6 +284,22 @@ function renderBreedCards(filter = "all") {
   if (breedCount) {
     breedCount.textContent = String(visible.length);
   }
+
+  cardsContainer.querySelectorAll(".wiki-snippet").forEach((node) => {
+    const typeNo = node.getAttribute("data-type-no");
+    const breed = visible.find((item) => String(item.typeNo) === String(typeNo));
+    if (!breed) {
+      return;
+    }
+
+    const cached = wikiCache.get(breed.typeNo);
+    if (cached) {
+      node.textContent = `维基百科：${cached}`;
+      return;
+    }
+
+    enqueueWikiTask(breed, node);
+  });
 }
 
 renderBreedCards("all");
