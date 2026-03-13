@@ -80,6 +80,39 @@ app.get("/api/suggestions/stats", (_req, res) => {
   });
 });
 
+app.get("/api/suggestions", (req, res) => {
+  const parsedLimit = Number.parseInt(String(req.query.limit || "50"), 10);
+  const limit = Number.isFinite(parsedLimit) ? Math.min(Math.max(parsedLimit, 1), 200) : 50;
+
+  const sql = `
+    SELECT
+      s.id,
+      s.nickname,
+      s.suggestion,
+      s.created_at,
+      e.source_path AS sourcePath
+    FROM suggestions s
+    LEFT JOIN suggestion_events e
+      ON e.id = (
+        SELECT se.id
+        FROM suggestion_events se
+        WHERE se.suggestion_id = s.id
+        ORDER BY se.id DESC
+        LIMIT 1
+      )
+    ORDER BY s.id DESC
+    LIMIT ?
+  `;
+
+  db.all(sql, [limit], (error, rows) => {
+    if (error) {
+      console.error("List query failed:", error.message);
+      return res.status(500).json({ message: "list query failed" });
+    }
+    return res.json({ items: rows || [] });
+  });
+});
+
 app.post("/api/suggestions", (req, res) => {
   const nicknameRaw = typeof req.body.nickname === "string" ? req.body.nickname.trim() : "";
   const contactRaw = typeof req.body.contact === "string" ? req.body.contact.trim() : "";

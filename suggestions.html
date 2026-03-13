@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>建议列表 | 汪星图鉴</title>
+  <meta name="description" content="查看汪星图鉴用户提交的建议列表。" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="bg-decor" aria-hidden="true">
+    <span class="blob blob--a"></span>
+    <span class="blob blob--b"></span>
+    <span class="blob blob--c"></span>
+    <span class="ring ring--a"></span>
+    <span class="ring ring--b"></span>
+    <span class="paw paw--1">🐾</span>
+    <span class="paw paw--2">🐾</span>
+    <span class="paw paw--3">🐾</span>
+  </div>
+
+  <main class="subpage-wrap suggestions-page">
+    <section class="subpage-head">
+      <a href="index.html" class="subpage-back">← 返回首页</a>
+      <h1>用户建议列表</h1>
+      <p>展示最近提交的建议内容（实时来自数据库）。</p>
+    </section>
+
+    <section class="suggestions-panel" aria-label="建议列表">
+      <div class="suggestions-panel__head">
+        <h2>最近建议</h2>
+        <button id="refreshSuggestions" class="hero__cta hero__cta--ghost" type="button">刷新</button>
+      </div>
+      <p id="suggestionsStatus" class="form-status" aria-live="polite"></p>
+      <div id="suggestionsList" class="suggestions-list"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>汪星图鉴 · 建议列表 · 2026</p>
+  </footer>
+
+  <script src="api-config.js"></script>
+  <script src="suggestions.js"></script>
+</body>
+</html>
