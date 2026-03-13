@@ -262,13 +262,13 @@ main {
 }
 
 .more-btn {
-  border: 1px solid #c7dce8;
-  background: #fff;
-  color: #2f5368;
+  border: 0;
+  background: transparent;
+  color: #7d8d99;
   font: inherit;
-  font-weight: 700;
-  border-radius: 999px;
-  padding: 0.35rem 0.7rem;
+  font-size: 0.86rem;
+  font-weight: 600;
+  padding: 0;
   cursor: pointer;
 }
 
@@ -353,6 +353,31 @@ main {
   margin: 0;
   color: var(--text-soft);
   line-height: 1.65;
+}
+
+.subpage-wrap {
+  width: min(1080px, 92vw);
+  margin: 2.2rem auto 2.8rem;
+}
+
+.subpage-head {
+  margin-bottom: 1rem;
+}
+
+.subpage-back {
+  color: #6f8491;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.subpage-head h1 {
+  margin: 0.45rem 0 0.18rem;
+  font-size: clamp(1.7rem, 4vw, 2.4rem);
+}
+
+.subpage-head p {
+  margin: 0 0 0.8rem;
+  color: var(--text-soft);
 }
 
 .care {

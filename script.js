@@ -53,12 +53,6 @@ const commonBreedRank = {
   巴哥犬: 20
 };
 
-const expandedBySize = {
-  small: false,
-  medium: false,
-  large: false
-};
-
 let currentFilter = "all";
 
 try {
@@ -173,7 +167,7 @@ function renderSizeFeature(filter = "all") {
   const featureMap = {
     all: {
       title: "体型特点",
-      text: "每个体型默认展示5个常见犬种，点击“更多”可展开全部。小型犬更适配紧凑空间；中型犬较均衡；大型犬对空间与训练投入要求更高。"
+      text: "每个体型默认展示5个常见犬种，点击“更多”可进入二级页面查看全部。小型犬更适配紧凑空间；中型犬较均衡；大型犬对空间与训练投入要求更高。"
     },
     small: {
       title: "小型犬特点",
@@ -333,14 +327,12 @@ function renderBreedCards(filter = "all") {
   cardsContainer.innerHTML = sizesToRender
     .map((size) => {
       const fullList = getBreedsBySize(size);
-      const expanded = expandedBySize[size];
-      const list = expanded ? fullList : fullList.slice(0, 5);
+      const list = fullList.slice(0, 5);
       shownCount += list.length;
 
-      const leftCount = Math.max(fullList.length - list.length, 0);
       const moreButton =
         fullList.length > 5
-          ? `<button class="more-btn" data-size="${size}" type="button">${expanded ? "收起" : `更多（+${leftCount}）`}</button>`
+          ? `<button class="more-btn" data-size="${size}" type="button">更多</button>`
           : "";
 
       return `
@@ -364,11 +356,10 @@ function renderBreedCards(filter = "all") {
   cardsContainer.querySelectorAll(".more-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       const size = btn.getAttribute("data-size");
-      if (!size || !expandedBySize.hasOwnProperty(size)) {
+      if (!sizeMeta[size]) {
         return;
       }
-      expandedBySize[size] = !expandedBySize[size];
-      renderBreedCards(currentFilter);
+      window.location.href = `breeds.html?size=${encodeURIComponent(size)}`;
     });
   });
 
