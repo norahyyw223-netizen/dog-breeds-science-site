@@ -422,6 +422,9 @@ footer {
   right: 1rem;
   bottom: 0.95rem;
   z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   border: 0;
   border-radius: 999px;
   padding: 0.65rem 0.94rem;
@@ -431,6 +434,17 @@ footer {
   background: linear-gradient(120deg, #ff8f70, #f27050);
   box-shadow: 0 10px 20px rgba(236, 106, 76, 0.34);
   cursor: pointer;
+}
+
+.feedback-count {
+  display: inline-block;
+  min-width: 1.25rem;
+  padding: 0.05rem 0.38rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.23);
+  font-size: 0.78rem;
+  line-height: 1.2;
+  text-align: center;
 }
 
 .feedback-dialog {

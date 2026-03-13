@@ -8,6 +8,7 @@ const feedbackDialog = document.querySelector("#feedbackDialog");
 const feedbackForm = document.querySelector("#feedbackForm");
 const formStatus = document.querySelector("#formStatus");
 const submitButton = feedbackForm?.querySelector("button[type='submit']");
+const suggestionCount = document.querySelector("#suggestionCount");
 const apiBaseUrl = (window.APP_CONFIG?.API_BASE_URL || "").replace(/\/+$/, "");
 
 const ckuGroups = Array.isArray(window.CKU_GROUPS) ? window.CKU_GROUPS : [];
@@ -383,8 +384,27 @@ function renderBreedCards(filter = "all") {
   });
 }
 
+async function refreshSuggestionCount() {
+  if (!suggestionCount) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/api/suggestions/stats`);
+    if (!response.ok) {
+      throw new Error("stats failed");
+    }
+    const data = await response.json();
+    const count = Number(data?.count);
+    suggestionCount.textContent = Number.isFinite(count) ? `${count}` : "";
+  } catch (_error) {
+    suggestionCount.textContent = "";
+  }
+}
+
 renderBreedCards("all");
 renderSizeFeature("all");
+refreshSuggestionCount();
 
 if (sizeFilters) {
   sizeFilters.addEventListener("click", (event) => {
@@ -406,8 +426,10 @@ if (sizeFilters) {
 if (openFeedbackButtons.length > 0 && feedbackDialog) {
   openFeedbackButtons.forEach((button) => {
     button.addEventListener("click", () => {
-      formStatus.textContent = "";
-      formStatus.className = "form-status";
+      if (formStatus) {
+        formStatus.textContent = "";
+        formStatus.className = "form-status";
+      }
       feedbackDialog.showModal();
     });
   });
@@ -446,14 +468,20 @@ if (feedbackForm) {
     };
 
     if (!payload.suggestion) {
-      formStatus.textContent = "请填写建议内容。";
-      formStatus.className = "form-status is-error";
+      if (formStatus) {
+        formStatus.textContent = "请填写建议内容。";
+        formStatus.className = "form-status is-error";
+      }
       return;
     }
 
-    submitButton.disabled = true;
-    formStatus.textContent = "正在提交...";
-    formStatus.className = "form-status";
+    if (submitButton) {
+      submitButton.disabled = true;
+    }
+    if (formStatus) {
+      formStatus.textContent = "正在提交...";
+      formStatus.className = "form-status";
+    }
 
     try {
       const response = await fetch(`${apiBaseUrl}/api/suggestions`, {
@@ -469,14 +497,21 @@ if (feedbackForm) {
       }
 
       feedbackForm.reset();
-      formStatus.textContent = "提交成功，感谢你的建议。";
-      formStatus.className = "form-status is-success";
+      if (formStatus) {
+        formStatus.textContent = "提交成功，感谢你的建议。";
+        formStatus.className = "form-status is-success";
+      }
+      refreshSuggestionCount();
       setTimeout(() => feedbackDialog.close(), 700);
     } catch (_error) {
-      formStatus.textContent = "提交失败，请稍后重试。";
-      formStatus.className = "form-status is-error";
+      if (formStatus) {
+        formStatus.textContent = "提交失败，请稍后重试。";
+        formStatus.className = "form-status is-error";
+      }
     } finally {
-      submitButton.disabled = false;
+      if (submitButton) {
+        submitButton.disabled = false;
+      }
     }
   });
 }
